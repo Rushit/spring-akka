@@ -1,4 +1,4 @@
-package com.sample.notification;
+package com.sample.notification.controller;
 
 import akka.actor.ActorSystem;
 import org.slf4j.Logger;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.async.DeferredResult;
 import static com.sample.config.ActorConfig.*;
-import static com.sample.notification.NotificationManager.*;
+import static com.sample.notification.actor.NotificationManager.*;
 
 @Controller
 public class NotificationController {
@@ -21,20 +21,15 @@ public class NotificationController {
     @Autowired
     ActorSystem actorSystem;
 
-    @RequestMapping("/blocking")
-    @ResponseBody
-    public String greeting(@RequestParam(value = "name", required = false, defaultValue = "World") String name) {
-        return "Hello";
-    }
-
     @RequestMapping(value = "/get", method = RequestMethod.GET)
     @ResponseBody
     public DeferredResult<String> getResult() {
-        final DeferredResult<String> deferredResult = new DeferredResult<String>();
+        long timeOut = 30*1000;
+        final DeferredResult<String> deferredResult = new DeferredResult<String>(timeOut);
         deferredResult.onTimeout(new Runnable() {
             @Override
             public void run() {
-                deferredResult.setResult("nothing");
+                deferredResult.setResult("");
             }
         });
         actorSystem.actorSelection(NOTIFICATION_MANAGER).tell(new NotificationRequest(deferredResult), null);

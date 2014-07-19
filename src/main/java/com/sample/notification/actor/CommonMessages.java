@@ -1,4 +1,4 @@
-package com.sample.notification;
+package com.sample.notification.actor;
 
 /**
  * Created by rpatel on 7/18/14.

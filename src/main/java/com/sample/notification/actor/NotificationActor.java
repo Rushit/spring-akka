@@ -1,4 +1,4 @@
-package com.sample.notification;
+package com.sample.notification.actor;
 
 import akka.actor.UntypedActor;
 import akka.event.Logging;

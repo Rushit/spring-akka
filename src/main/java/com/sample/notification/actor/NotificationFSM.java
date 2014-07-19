@@ -1,10 +1,10 @@
-package com.sample.notification;
+package com.sample.notification.actor;
 
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import static com.sample.notification.NotificationFSMMessages.*;
+
 /**
  * Created by rpatel on 7/17/14.
  */
@@ -21,8 +21,8 @@ public class NotificationFSM extends NotificationFSMBase{
 
         log.info("message in FSM {}, when state is {}", object, getState().toString());
         if (getState() == State.START) {
-            if (object instanceof SetTarget) {
-                setTarget(((SetTarget) object).ref);
+            if (object instanceof NotificationFSMMessages.SetTarget) {
+                setTarget(((NotificationFSMMessages.SetTarget) object).ref);
                 // todo : db call and set state to waiting
                 setState(State.WAITING_FOR_DATA);
             } else {
@@ -31,19 +31,19 @@ public class NotificationFSM extends NotificationFSMBase{
             }
 
         } else if (getState() == State.WAITING) {
-            if (object instanceof SetTarget) {
-                setTarget(((SetTarget) object).ref);
+            if (object instanceof NotificationFSMMessages.SetTarget) {
+                setTarget(((NotificationFSMMessages.SetTarget) object).ref);
                 setState(State.WAITING_FOR_DATA);
-            } else if (object instanceof Queue) {
-                enqueue(((Queue) object).message);
+            } else if (object instanceof NotificationFSMMessages.Queue) {
+                enqueue(((NotificationFSMMessages.Queue) object).message);
                 setState(State.WAITING_FOR_TARGET);
             } else {
                 log.warning("received unknown message {} in state {}", object, getState());
                 unhandled(object);
             }
         } else if (getState() == State.WAITING_FOR_DATA) {
-            if (object instanceof Queue) {
-                enqueue(((Queue) object).message);
+            if (object instanceof NotificationFSMMessages.Queue) {
+                enqueue(((NotificationFSMMessages.Queue) object).message);
                 if (isTargetAvailable()) {
                     sendDataToTarget();
                     setState(State.WAITING);
@@ -56,7 +56,7 @@ public class NotificationFSM extends NotificationFSMBase{
             }
 
         } else if (getState() == State.WAITING_FOR_TARGET) {
-            if (object instanceof SetTarget) {
+            if (object instanceof NotificationFSMMessages.SetTarget) {
                 if (isMessageAvailable()) {
                     sendDataToTarget();
                     setState(State.WAITING);
@@ -74,7 +74,7 @@ public class NotificationFSM extends NotificationFSMBase{
     }
 
     private void sendDataToTarget() {
-        getTarget().tell(new Batch(drainQueue()), getSelf());
+        getTarget().tell(new NotificationFSMMessages.Batch(drainQueue()), getSelf());
         setTarget(null);
     }
 }

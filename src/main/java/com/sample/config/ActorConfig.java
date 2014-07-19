@@ -2,7 +2,7 @@ package com.sample.config;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import com.sample.notification.CommonMessages;
+import com.sample.notification.actor.CommonMessages;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;

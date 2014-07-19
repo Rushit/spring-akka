@@ -1,4 +1,4 @@
-package com.sample.notification;
+package com.sample.notification.actor;
 
 import org.springframework.stereotype.Service;
 
