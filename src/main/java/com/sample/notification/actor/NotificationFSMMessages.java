@@ -16,7 +16,8 @@ public class NotificationFSMMessages {
         }
     }
 
-    public static final class UnRegisterTarget {}
+    public static final class UnRegisterTarget {};
+    public static final class TimeOutTick{};
 
     public static final class Queue implements Serializable {
         final List<String> message = new ArrayList<String>();

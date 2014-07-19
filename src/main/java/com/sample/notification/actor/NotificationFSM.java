@@ -1,10 +1,13 @@
 package com.sample.notification.actor;
 
+import akka.actor.Cancellable;
 import akka.actor.ReceiveTimeout;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import java.util.concurrent.TimeUnit;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import scala.concurrent.duration.Duration;
 import static com.sample.notification.actor.NotificationFSMMessages.*;
 
 
@@ -15,8 +18,8 @@ import static com.sample.notification.actor.NotificationFSMMessages.*;
 @Scope("prototype")
 public class NotificationFSM extends NotificationFSMBase{
 
-    private final LoggingAdapter log = Logging.getLogger(getContext().system(), this);
-    public NotificationFSM() {}
+    private final LoggingAdapter log  = Logging.getLogger(getContext().system(), this);
+    private       Cancellable    tick = null;
 
     @Override
     public void onReceive(Object object) {
@@ -24,21 +27,22 @@ public class NotificationFSM extends NotificationFSMBase{
         log.info("message in FSM {}, when state is {}", object, getState().toString());
 
         if (object instanceof UnRegisterTarget) {
-            if(isTargetAvailable() && getTarget().equals(getSender())){
+            if (isTargetAvailable() && getTarget().equals(getSender())) {
                 setTarget(null);
-                if(getState() == State.WAITING_FOR_DATA){
+                if (getState() == State.WAITING_FOR_DATA) {
                     setState(State.WAITING);
                 }
             }
         } else {
 
+            // capturing immutable data
             if (object instanceof SetTarget) {
                 setTarget(((SetTarget) object).ref);
             } else if (object instanceof Queue) {
                 enqueue(((Queue) object).message);
             }
 
-            // action based on state
+            // state automata changes
             if (getState() == State.START) {
                 handlStart(object);
             } else if (getState() == State.WAITING) {
@@ -49,12 +53,21 @@ public class NotificationFSM extends NotificationFSMBase{
                 handleWaitingForTarget(object);
             }
         }
-
+        renewTimeOutTick();
         log.info("new state {}", getState().toString());
     }
 
 
-
+    @Override
+    public void preStart(){
+        renewTimeOutTick();
+    }
+    @Override
+    public void postStop() {
+        if(tick != null) {
+            tick.cancel();
+        }
+    }
     @Override
     public void unhandled(Object object){
         log.warning("received unknown message {} in state {}", object, getState());
@@ -77,7 +90,8 @@ public class NotificationFSM extends NotificationFSMBase{
             setState(State.WAITING_FOR_DATA);
         } else if (object instanceof Queue) {
             setState(State.WAITING_FOR_TARGET);
-        } else if (object instanceof ReceiveTimeout){
+        } else if (object instanceof TimeOutTick){
+            log.info("kill pill {}", getSelf().path());
             getContext().stop(getSelf());
         } else {
             unhandled(object);
@@ -110,10 +124,17 @@ public class NotificationFSM extends NotificationFSMBase{
         }
     }
 
+    private void renewTimeOutTick(){
+        if(tick != null) {
+            tick.cancel();
+        }
+        tick = getContext().system().scheduler().scheduleOnce(Duration.create(5,TimeUnit.MINUTES),
+                getSelf(), new TimeOutTick(), getContext().dispatcher(), getSelf());
+    }
+
     private void sendDataToTarget() {
         getTarget().tell(new Batch(drainQueue()), getSelf());
         setTarget(null);
-
     }
 
 }
