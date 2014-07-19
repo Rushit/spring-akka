@@ -1,7 +1,6 @@
 package com.sample.notification.actor;
 
 import akka.actor.Cancellable;
-import akka.actor.ReceiveTimeout;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import java.util.concurrent.TimeUnit;
@@ -55,24 +54,6 @@ public class NotificationFSM extends NotificationFSMBase{
         }
         renewTimeOutTick();
         log.info("new state {}", getState().toString());
-    }
-
-
-    @Override
-    public void preStart(){
-        renewTimeOutTick();
-    }
-    @Override
-    public void postStop() {
-        if(tick != null) {
-            tick.cancel();
-        }
-    }
-    @Override
-    public void unhandled(Object object){
-        log.warning("received unknown message {} in state {}", object, getState());
-        super.unhandled(object);
-
     }
 
     public void handlStart(Object object) {
@@ -135,6 +116,23 @@ public class NotificationFSM extends NotificationFSMBase{
     private void sendDataToTarget() {
         getTarget().tell(new Batch(drainQueue()), getSelf());
         setTarget(null);
+    }
+
+    @Override
+    public void preStart(){
+        renewTimeOutTick();
+    }
+    @Override
+    public void postStop() {
+        if(tick != null) {
+            tick.cancel();
+        }
+    }
+    @Override
+    public void unhandled(Object object){
+        log.warning("received unknown message {} in state {}", object, getState());
+        super.unhandled(object);
+
     }
 
 }
