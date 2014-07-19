@@ -13,10 +13,6 @@ public abstract class NotificationFSMBase extends UntypedActor {
     /*
    * This is the mutable state of this state machine.
    */
-    protected enum State {
-        START, WAITING, WAITING_FOR_DATA, WAITING_FOR_TARGET;
-    }
-
     private State state = State.START;
     private ActorRef     target = null;
     private List<String> queue = new ArrayList<String>();
@@ -63,6 +59,11 @@ public abstract class NotificationFSMBase extends UntypedActor {
     protected boolean isMessageAvailable(){
         return (this.queue != null || this.queue.size() > 0);
     }
+
+    protected enum State {
+        START, WAITING, WAITING_FOR_DATA, WAITING_FOR_TARGET;
+    }
+
 
 
 }

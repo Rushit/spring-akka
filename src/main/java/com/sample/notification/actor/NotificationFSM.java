@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 public class NotificationFSM extends NotificationFSMBase{
 
     private final LoggingAdapter log = Logging.getLogger(getContext().system(), this);
-
     public NotificationFSM() {}
 
     @Override

@@ -66,6 +66,11 @@ public class NotificationManager extends UntypedActor {
         }
     }
 
+    /**
+     * Todo: need to cache it
+     * @param createIfNE
+     * @return
+     */
     private ActorRef getNotificationActor(boolean createIfNE){
         ActorSelection actorSelection = getContext().actorSelection("user1");
         Timeout timeout = new Timeout(Duration.create(1, "seconds"));
