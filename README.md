@@ -9,6 +9,6 @@ run app: java -jar build/libs/spring-akka-0.1.0.jar
 
 Long Polling URL: localhost:8080/get
 
-Push Message: localhost:8080/push?message=hellow
+Push Message: localhost:8080/add?message=hellow
 
 Todo: Front-end to use these API.
