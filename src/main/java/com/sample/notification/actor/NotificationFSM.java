@@ -1,9 +1,12 @@
 package com.sample.notification.actor;
 
+import akka.actor.ReceiveTimeout;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import static com.sample.notification.actor.NotificationFSMMessages.*;
+
 
 /**
  * Created by rpatel on 7/17/14.
@@ -19,61 +22,98 @@ public class NotificationFSM extends NotificationFSMBase{
     public void onReceive(Object object) {
 
         log.info("message in FSM {}, when state is {}", object, getState().toString());
-        if (getState() == State.START) {
-            if (object instanceof NotificationFSMMessages.SetTarget) {
-                setTarget(((NotificationFSMMessages.SetTarget) object).ref);
-                // todo : db call and set state to waiting
-                setState(State.WAITING_FOR_DATA);
-            } else {
-                log.warning("received unknown message {} in state {}", object, getState());
-                unhandled(object);
-            }
 
-        } else if (getState() == State.WAITING) {
-            if (object instanceof NotificationFSMMessages.SetTarget) {
-                setTarget(((NotificationFSMMessages.SetTarget) object).ref);
-                setState(State.WAITING_FOR_DATA);
-            } else if (object instanceof NotificationFSMMessages.Queue) {
-                enqueue(((NotificationFSMMessages.Queue) object).message);
-                setState(State.WAITING_FOR_TARGET);
-            } else {
-                log.warning("received unknown message {} in state {}", object, getState());
-                unhandled(object);
-            }
-        } else if (getState() == State.WAITING_FOR_DATA) {
-            if (object instanceof NotificationFSMMessages.Queue) {
-                enqueue(((NotificationFSMMessages.Queue) object).message);
-                if (isTargetAvailable()) {
-                    sendDataToTarget();
+        if (object instanceof UnRegisterTarget) {
+            if(isTargetAvailable() && getTarget().equals(getSender())){
+                setTarget(null);
+                if(getState() == State.WAITING_FOR_DATA){
                     setState(State.WAITING);
-                }else {
-                    setState(State.WAITING_FOR_TARGET);
                 }
-            } else {
-                log.warning("received unknown message {} in state {}", object, getState());
-                unhandled(object);
+            }
+        } else {
+
+            if (object instanceof SetTarget) {
+                setTarget(((SetTarget) object).ref);
+            } else if (object instanceof Queue) {
+                enqueue(((Queue) object).message);
             }
 
-        } else if (getState() == State.WAITING_FOR_TARGET) {
-            if (object instanceof NotificationFSMMessages.SetTarget) {
-                if (isMessageAvailable()) {
-                    sendDataToTarget();
-                    setState(State.WAITING);
-                } else {
-                    setState(State.WAITING_FOR_DATA);
-                }
-            }else {
-                log.warning("received unknown message {} in state {}", object, getState());
-                unhandled(object);
+            // action based on state
+            if (getState() == State.START) {
+                handlStart(object);
+            } else if (getState() == State.WAITING) {
+                handleWaiting(object);
+            } else if (getState() == State.WAITING_FOR_DATA) {
+                handleWaitingForData(object);
+            } else if (getState() == State.WAITING_FOR_TARGET) {
+                handleWaitingForTarget(object);
             }
-
         }
 
         log.info("new state {}", getState().toString());
     }
 
-    private void sendDataToTarget() {
-        getTarget().tell(new NotificationFSMMessages.Batch(drainQueue()), getSelf());
-        setTarget(null);
+
+
+    @Override
+    public void unhandled(Object object){
+        log.warning("received unknown message {} in state {}", object, getState());
+        super.unhandled(object);
+
     }
+
+    public void handlStart(Object object) {
+        if (object instanceof SetTarget) {
+            // todo : db call and set state to waiting
+            setState(State.WAITING_FOR_DATA);
+        } else {
+            unhandled(object);
+        }
+
+    }
+
+    public void handleWaiting(Object object){
+        if (object instanceof SetTarget) {
+            setState(State.WAITING_FOR_DATA);
+        } else if (object instanceof Queue) {
+            setState(State.WAITING_FOR_TARGET);
+        } else if (object instanceof ReceiveTimeout){
+            getContext().stop(getSelf());
+        } else {
+            unhandled(object);
+        }
+    }
+
+    public void handleWaitingForTarget(Object object){
+        if (object instanceof SetTarget) {
+            if (isMessageAvailable()) {
+                sendDataToTarget();
+                setState(State.WAITING);
+            } else {
+                setState(State.WAITING_FOR_DATA);
+            }
+        } else {
+            unhandled(object);
+        }
+    }
+
+    public void handleWaitingForData(Object object){
+        if (object instanceof Queue) {
+            if (isTargetAvailable()) {
+                sendDataToTarget();
+                setState(State.WAITING);
+            }else {
+                setState(State.WAITING_FOR_TARGET);
+            }
+        } else {
+            unhandled(object);
+        }
+    }
+
+    private void sendDataToTarget() {
+        getTarget().tell(new Batch(drainQueue()), getSelf());
+        setTarget(null);
+
+    }
+
 }

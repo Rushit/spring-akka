@@ -14,8 +14,9 @@ public class NotificationFSMMessages {
         public SetTarget(ActorRef ref) {
             this.ref = ref;
         }
-
     }
+
+    public static final class UnRegisterTarget {}
 
     public static final class Queue implements Serializable {
         final List<String> message = new ArrayList<String>();

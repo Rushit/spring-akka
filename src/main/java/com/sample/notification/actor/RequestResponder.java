@@ -1,12 +1,15 @@
 package com.sample.notification.actor;
 
 import akka.actor.ActorRef;
+import akka.actor.ReceiveTimeout;
 import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.async.DeferredResult;
+import scala.concurrent.duration.Duration;
+import static com.sample.notification.actor.NotificationFSMMessages.*;
 
 /**
  * Created by rpatel on 7/16/14.
@@ -17,6 +20,7 @@ import org.springframework.web.context.request.async.DeferredResult;
 public class RequestResponder extends UntypedActor {
 
     public static class GetNotifications{};
+    public static class UnRegistered{};
 
     private DeferredResult<String> result;
     private ActorRef notificationActor;
@@ -26,15 +30,21 @@ public class RequestResponder extends UntypedActor {
     public RequestResponder(DeferredResult<String> result, ActorRef notificationActor) {
         this.result = result;
         this.notificationActor = notificationActor;
+        getContext().setReceiveTimeout(Duration.create("30 seconds"));
     }
 
     @Override
     public void onReceive(Object message) throws Exception {
         log.info("message in RequestResponder {}", message);
         if(message instanceof GetNotifications) {
-            notificationActor.tell(new NotificationFSMMessages.SetTarget(getSelf()), getSelf());
-        }if (message instanceof NotificationFSMMessages.Batch) {
+            notificationActor.tell(new SetTarget(getSelf()), getSelf());
+        } else if (message instanceof Batch) {
             result.setResult(message.toString());
+            log.info("kill pill by {}", message);
+            getContext().stop(getSelf());
+        } else if(message instanceof ReceiveTimeout) {
+            log.info("kill pill by {}", message);
+            notificationActor.tell(new UnRegisterTarget(), getSelf());
             getContext().stop(getSelf());
         } else {
             unhandled(message);
