@@ -31,6 +31,7 @@ public class ActorConfig {
         ActorSystem system = ActorSystem.create("NotificationSystem");
         // initialize the application context in the Akka Spring Extension
         SpringExtension.SpringExtProvider.get(system).initialize(applicationContext);
+        // todo: better way of init notification manager on startup
         ActorRef ref = system.actorOf(SpringExtProvider.get(system).props("NotificationManager"),NOTIFICATION_MANAGER_NAME);
         ref.tell(new CommonMessages.WhoAreYou(), null);
         return system;
