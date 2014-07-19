@@ -16,3 +16,4 @@ target/
 .classpath
 .project
 .settings
+.gradle/2.0/taskArtifacts
