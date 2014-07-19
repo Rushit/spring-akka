@@ -14,6 +14,7 @@ import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 import static com.sample.config.SpringExtension.SpringExtProvider;
+import static com.sample.notification.actor.CommonMessages.*;
 
 /**
  * Created by rpatel on 7/18/14.
@@ -22,16 +23,20 @@ import static com.sample.config.SpringExtension.SpringExtProvider;
 @Scope("prototype")
 public class NotificationManager extends UntypedActor {
 
-    public static class NotificationRequest{
+    public static class NotificationRequest {
+
         public DeferredResult<String> result;
-        public NotificationRequest(DeferredResult<String> result){
+
+        public NotificationRequest(DeferredResult<String> result) {
             this.result = result;
         }
     }
 
-    public static class PushNewMessage{
+    public static class PushNewMessage {
+
         public String message;
-        public PushNewMessage(String message){
+
+        public PushNewMessage(String message) {
             this.message = message;
         }
     }
@@ -42,25 +47,26 @@ public class NotificationManager extends UntypedActor {
     public void onReceive(Object message) throws Exception {
 
         log.info("Message - {}", message);
-        if( message instanceof NotificationRequest) {
+        if (message instanceof NotificationRequest) {
             final ActorRef notifcationActor = getNotificationActor(true);
             String waterName = "watcher" + System.currentTimeMillis();
-            final ActorRef watcher = getContext().actorOf(
-                    SpringExtProvider.get(getContext().system()).props("RequestResponder",
-                    ((NotificationRequest) message).result, notifcationActor), waterName);
+            final ActorRef watcher = getContext().actorOf(SpringExtProvider.get(getContext().system()).props(
+                            "RequestResponder", ((NotificationRequest) message).result, notifcationActor), waterName
+            );
             watcher.tell(new RequestResponder.GetNotifications(), getSelf());
 
-        } else if ( message instanceof PushNewMessage) {
+        } else if (message instanceof PushNewMessage) {
             final ActorRef notifcationActor = getNotificationActor(true);
-            if (notifcationActor != null){
+            if (notifcationActor != null) {
                 log.info("actor found in push");
                 notifcationActor.tell(new NotificationFSMMessages.Queue(((PushNewMessage) message).message), getSelf());
-            }else{
+            } else {
                 log.info("actor not found in push");
                 //do nothing
             }
-        } else if (message instanceof CommonMessages.WhoAreYou){
+        } else if (message instanceof WhoAreYou) {
             log.info("I am {}", getSelf().path());
+            getSender().tell(getSelf().path(), getSelf());
         } else {
             unhandled(message);
         }
@@ -68,24 +74,25 @@ public class NotificationManager extends UntypedActor {
 
     /**
      * Todo: need to cache it
+     *
      * @param createIfNE
      * @return
      */
-    private ActorRef getNotificationActor(boolean createIfNE){
+    private ActorRef getNotificationActor(boolean createIfNE) {
         ActorSelection actorSelection = getContext().actorSelection("user1");
         Timeout timeout = new Timeout(Duration.create(1, "seconds"));
-        scala.concurrent.Future<ActorRef> futreActorRef = actorSelection.resolveOne(Timeout.durationToTimeout(
+        scala.concurrent.Future<ActorRef> futureActorRef = actorSelection.resolveOne(Timeout.durationToTimeout(
                 new FiniteDuration(1, TimeUnit.SECONDS)));
 
         ActorRef actorRef = null;
         try {
-            actorRef = Await.result(futreActorRef, timeout.duration());
+            actorRef = Await.result(futureActorRef, timeout.duration());
         } catch (Exception ignore) {
             log.warning("failed search for actor", ignore);
         }
 
-        log.info("actor found? {}", !(actorRef ==null));
-        if(actorRef==null && createIfNE) {
+        log.info("actor found? {}", !(actorRef == null));
+        if (actorRef == null && createIfNE) {
             actorRef = getContext().actorOf(SpringExtProvider.
                     get(getContext().system()).props("NotificationActor"), "user1");
             log.info("Actor created");

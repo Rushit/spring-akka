@@ -9,13 +9,12 @@ import org.springframework.stereotype.Component;
 import scala.concurrent.duration.Duration;
 import static com.sample.notification.actor.NotificationFSMMessages.*;
 
-
 /**
  * Created by rpatel on 7/17/14.
  */
 @Component("NotificationActor")
 @Scope("prototype")
-public class NotificationFSM extends NotificationFSMBase{
+public class NotificationFSM extends NotificationFSMBase {
 
     private final LoggingAdapter log  = Logging.getLogger(getContext().system(), this);
     private       Cancellable    tick = null;
@@ -66,12 +65,12 @@ public class NotificationFSM extends NotificationFSMBase{
 
     }
 
-    public void handleWaiting(Object object){
+    public void handleWaiting(Object object) {
         if (object instanceof SetTarget) {
             setState(State.WAITING_FOR_DATA);
         } else if (object instanceof Queue) {
             setState(State.WAITING_FOR_TARGET);
-        } else if (object instanceof TimeOutTick){
+        } else if (object instanceof TimeOutTick) {
             log.info("kill pill {}", getSelf().path());
             getContext().stop(getSelf());
         } else {
@@ -79,7 +78,7 @@ public class NotificationFSM extends NotificationFSMBase{
         }
     }
 
-    public void handleWaitingForTarget(Object object){
+    public void handleWaitingForTarget(Object object) {
         if (object instanceof SetTarget) {
             if (isMessageAvailable()) {
                 sendDataToTarget();
@@ -92,12 +91,12 @@ public class NotificationFSM extends NotificationFSMBase{
         }
     }
 
-    public void handleWaitingForData(Object object){
+    public void handleWaitingForData(Object object) {
         if (object instanceof Queue) {
             if (isTargetAvailable()) {
                 sendDataToTarget();
                 setState(State.WAITING);
-            }else {
+            } else {
                 setState(State.WAITING_FOR_TARGET);
             }
         } else {
@@ -105,12 +104,12 @@ public class NotificationFSM extends NotificationFSMBase{
         }
     }
 
-    private void renewTimeOutTick(){
-        if(tick != null) {
+    private void renewTimeOutTick() {
+        if (tick != null) {
             tick.cancel();
         }
-        tick = getContext().system().scheduler().scheduleOnce(Duration.create(5,TimeUnit.MINUTES),
-                getSelf(), new TimeOutTick(), getContext().dispatcher(), getSelf());
+        tick = getContext().system().scheduler().scheduleOnce(Duration.create(5, TimeUnit.MINUTES), getSelf(),
+                new TimeOutTick(), getContext().dispatcher(), getSelf());
     }
 
     private void sendDataToTarget() {
@@ -119,17 +118,19 @@ public class NotificationFSM extends NotificationFSMBase{
     }
 
     @Override
-    public void preStart(){
+    public void preStart() {
         renewTimeOutTick();
     }
+
     @Override
     public void postStop() {
-        if(tick != null) {
+        if (tick != null) {
             tick.cancel();
         }
     }
+
     @Override
-    public void unhandled(Object object){
+    public void unhandled(Object object) {
         log.warning("received unknown message {} in state {}", object, getState());
         super.unhandled(object);
 

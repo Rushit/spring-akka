@@ -20,7 +20,7 @@ public class ActorConfig {
     @Autowired
     private ApplicationContext applicationContext;
 
-    private static String NOTIFICATION_MANAGER_NAME = "manager";
+    private static String NOTIFICATION_MANAGER_NAME = "notification-manager";
     public static String NOTIFICATION_MANAGER = "/user/" + NOTIFICATION_MANAGER_NAME;
 
     /**
