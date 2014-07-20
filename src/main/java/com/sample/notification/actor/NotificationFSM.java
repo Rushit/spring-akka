@@ -1,8 +1,10 @@
 package com.sample.notification.actor;
 
+import akka.actor.ActorRef;
 import akka.actor.Cancellable;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -25,9 +27,9 @@ public class NotificationFSM extends NotificationFSMBase {
         log.info("message in FSM {}, when state is {}", object, getState().toString());
 
         if (object instanceof UnRegisterTarget) {
-            if (isTargetAvailable() && getTarget().equals(getSender())) {
-                setTarget(null);
-                if (getState() == State.WAITING_FOR_DATA) {
+            if (isTargetAvailable()) {
+                getTargets().remove(getSender());
+                if (!isTargetAvailable() && getState() == State.WAITING_FOR_DATA) {
                     setState(State.WAITING);
                 }
             }
@@ -35,7 +37,7 @@ public class NotificationFSM extends NotificationFSMBase {
 
             // capturing immutable data
             if (object instanceof SetTarget) {
-                setTarget(((SetTarget) object).ref);
+                addTarget(((SetTarget) object).ref);
             } else if (object instanceof Queue) {
                 enqueue(((Queue) object).message);
             }
@@ -113,8 +115,14 @@ public class NotificationFSM extends NotificationFSMBase {
     }
 
     private void sendDataToTarget() {
-        getTarget().tell(new Batch(drainQueue()), getSelf());
-        setTarget(null);
+        final Batch messages = new Batch(drainQueue());
+        Iterator<ActorRef> itr = getTargets().iterator();
+        while(itr.hasNext()){
+            ActorRef target = itr.next();
+            target.tell(messages, getSelf());
+            itr.remove();
+        }
+
     }
 
     @Override

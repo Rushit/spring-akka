@@ -3,7 +3,10 @@ package com.sample.notification.actor;
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by rpatel on 7/16/14.
@@ -13,12 +16,12 @@ public abstract class NotificationFSMBase extends UntypedActor {
     /*
    * This is the mutable state of this state machine.
    */
-    private State state = State.START;
-    private ActorRef     target = null;
-    private List<String> queue = new ArrayList<String>();
+    private State         state   = State.START;
+    private Set<ActorRef> targets = new HashSet<ActorRef>();
+    private List<String>  queue   = new ArrayList<String>();
 
-    protected void setTarget(ActorRef target) {
-        this.target = target;
+    protected void addTarget(ActorRef target) {
+        this.targets.add(target);
     }
 
     protected void setState(State s) {
@@ -46,14 +49,12 @@ public abstract class NotificationFSMBase extends UntypedActor {
         return state;
     }
 
-    protected ActorRef getTarget() {
-        if (target == null)
-            throw new IllegalStateException("getTarget(): not yet initialized");
-        return target;
+    protected Collection<ActorRef> getTargets() {
+        return targets;
     }
 
     protected boolean isTargetAvailable() {
-        return (this.target != null);
+        return (this.targets != null || this.targets.size() <=0);
     }
 
     protected boolean isMessageAvailable(){
