@@ -23,6 +23,24 @@ public class NotificationController {
     @Autowired
     ActorSystem actorSystem;
 
+    @RequestMapping(value = "/blocking-ping", method = RequestMethod.GET)
+    @ResponseBody
+    public String pingpong1() {
+        return "Pong";
+    }
+
+    @RequestMapping(value = "/aync-ping", method = RequestMethod.GET)
+    @ResponseBody
+    public DeferredResult<String> pingpong() {
+        final DeferredResult<String> deferredResult = new DeferredResult<String>(LONG_POLLING_TIMEOUT);
+        (new Thread(){
+            public void run (){
+                deferredResult.setResult("Pong");
+            }
+        }).start();
+        return deferredResult;
+    }
+
     @RequestMapping(value = "/get", method = RequestMethod.GET)
     @ResponseBody
     public DeferredResult<String> getResult() {

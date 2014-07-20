@@ -30,21 +30,22 @@ public class RequestResponder extends UntypedActor {
     public RequestResponder(DeferredResult<String> result, ActorRef notificationActor) {
         this.result = result;
         this.notificationActor = notificationActor;
-        getContext().setReceiveTimeout(Duration.create("30 seconds"));
+        getContext().setReceiveTimeout(Duration.create("29 seconds"));
     }
 
     @Override
     public void onReceive(Object message) throws Exception {
         log.info("message in RequestResponder {}", message);
         if(message instanceof GetNotifications) {
-            notificationActor.tell(new SetTarget(getSelf()), getSelf());
+            notificationActor.tell(new SetTarget(), getSelf());
         } else if (message instanceof Batch) {
             result.setResult(message.toString());
             log.info("kill pill by {}", message);
             getContext().stop(getSelf());
         } else if(message instanceof ReceiveTimeout) {
+            result.setResult("no update");
             log.info("kill pill by {}", message);
-            notificationActor.tell(new UnRegisterTarget(), getSelf());
+            notificationActor.tell(new RemoveTarget(), getSelf());
             getContext().stop(getSelf());
         } else {
             unhandled(message);

@@ -26,7 +26,7 @@ public class NotificationFSM extends NotificationFSMBase {
 
         log.info("message in FSM {}, when state is {}", object, getState().toString());
 
-        if (object instanceof UnRegisterTarget) {
+        if (object instanceof RemoveTarget) {
             if (isTargetAvailable()) {
                 getTargets().remove(getSender());
                 if (!isTargetAvailable() && getState() == State.WAITING_FOR_DATA) {
@@ -37,7 +37,7 @@ public class NotificationFSM extends NotificationFSMBase {
 
             // capturing immutable data
             if (object instanceof SetTarget) {
-                addTarget(((SetTarget) object).ref);
+                addTarget(getSender());
             } else if (object instanceof Queue) {
                 enqueue(((Queue) object).message);
             }

@@ -10,16 +10,11 @@ import java.util.List;
  */
 public class NotificationFSMMessages {
 
-    public static final class UnRegisterTarget {};
+    public static final class RemoveTarget {};
+    public static final class SetTarget{}
 
     public static final class TimeOutTick{};
 
-    public static final class SetTarget implements Serializable {
-        final ActorRef ref;
-        public SetTarget(ActorRef ref) {
-            this.ref = ref;
-        }
-    }
 
     public static final class Queue implements Serializable {
         final List<String> message = new ArrayList<String>();

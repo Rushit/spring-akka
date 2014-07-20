@@ -15,7 +15,7 @@ import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 import static com.sample.config.SpringExtension.SpringExtProvider;
 import static com.sample.notification.actor.CommonMessages.*;
-
+import static com.sample.notification.actor.NotificationFSMMessages.*;
 /**
  * Created by rpatel on 7/18/14.
  */
@@ -56,14 +56,7 @@ public class NotificationManager extends UntypedActor {
             watcher.tell(new RequestResponder.GetNotifications(), getSelf());
 
         } else if (message instanceof PushNewMessage) {
-            final ActorRef notifcationActor = getNotificationActor(true);
-            if (notifcationActor != null) {
-                log.info("actor found in push");
-                notifcationActor.tell(new NotificationFSMMessages.Queue(((PushNewMessage) message).message), getSelf());
-            } else {
-                log.info("actor not found in push");
-                //do nothing
-            }
+            getContext().actorSelection("user1").tell(new Queue(((PushNewMessage) message).message), getSelf());
         } else if (message instanceof WhoAreYou) {
             log.info("I am {}", getSelf().path());
             getSender().tell(getSelf().path(), getSelf());
