@@ -1,4 +1,4 @@
-package com.sample.notification.actor;
+package com.sample.notification.fsm;
 
 import akka.actor.ActorRef;
 import akka.actor.ReceiveTimeout;
@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.async.DeferredResult;
 import scala.concurrent.duration.Duration;
-import static com.sample.notification.actor.NotificationFSMMessages.*;
+import static com.sample.notification.fsm.NotificationFSMMessages.*;
 
 /**
  * Created by rpatel on 7/16/14.
@@ -35,16 +35,16 @@ public class RequestResponder extends UntypedActor {
 
     @Override
     public void onReceive(Object message) throws Exception {
-        log.info("message in RequestResponder {}", message);
+        log.debug("message in RequestResponder {}", message);
         if(message instanceof GetNotifications) {
             notificationActor.tell(new SetTarget(), getSelf());
         } else if (message instanceof Batch) {
             result.setResult(message.toString());
-            log.info("kill pill by {}", message);
+            log.debug("kill pill by {}", message);
             getContext().stop(getSelf());
         } else if(message instanceof ReceiveTimeout) {
             result.setResult("no update");
-            log.info("kill pill by {}", message);
+            log.debug("kill pill by {}", message);
             notificationActor.tell(new RemoveTarget(), getSelf());
             getContext().stop(getSelf());
         } else {

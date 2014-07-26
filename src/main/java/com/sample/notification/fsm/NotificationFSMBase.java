@@ -1,4 +1,4 @@
-package com.sample.notification.actor;
+package com.sample.notification.fsm;
 
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
@@ -54,7 +54,7 @@ public abstract class NotificationFSMBase extends UntypedActor {
     }
 
     protected boolean isTargetAvailable() {
-        return (this.targets != null || this.targets.size() <=0);
+        return (this.targets != null && this.targets.size() >0);
     }
 
     protected boolean isMessageAvailable(){

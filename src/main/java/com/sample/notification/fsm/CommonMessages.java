@@ -1,4 +1,4 @@
-package com.sample.notification.actor;
+package com.sample.notification.fsm;
 
 /**
  * Created by rpatel on 7/18/14.

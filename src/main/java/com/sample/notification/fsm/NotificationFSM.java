@@ -1,4 +1,4 @@
-package com.sample.notification.actor;
+package com.sample.notification.fsm;
 
 import akka.actor.ActorRef;
 import akka.actor.Cancellable;
@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import scala.concurrent.duration.Duration;
-import static com.sample.notification.actor.NotificationFSMMessages.*;
+import static com.sample.notification.fsm.NotificationFSMMessages.*;
 
 /**
  * Created by rpatel on 7/17/14.
@@ -24,11 +24,12 @@ public class NotificationFSM extends NotificationFSMBase {
     @Override
     public void onReceive(Object object) {
 
-        log.info("message in FSM {}, when state is {}", object, getState().toString());
+        log.debug("message in FSM {}, when state is {}", object, getState().toString());
 
         if (object instanceof RemoveTarget) {
             if (isTargetAvailable()) {
                 getTargets().remove(getSender());
+                log.info("targets {}", getTargets());
                 if (!isTargetAvailable() && getState() == State.WAITING_FOR_DATA) {
                     setState(State.WAITING);
                 }
@@ -38,6 +39,7 @@ public class NotificationFSM extends NotificationFSMBase {
             // capturing immutable data
             if (object instanceof SetTarget) {
                 addTarget(getSender());
+                log.info("targets {}", getTargets());
             } else if (object instanceof Queue) {
                 enqueue(((Queue) object).message);
             }
@@ -54,7 +56,7 @@ public class NotificationFSM extends NotificationFSMBase {
             }
         }
         renewTimeOutTick();
-        log.info("new state {}", getState().toString());
+        log.debug("new state {}", getState().toString());
     }
 
     public void handlStart(Object object) {
@@ -73,7 +75,7 @@ public class NotificationFSM extends NotificationFSMBase {
         } else if (object instanceof Queue) {
             setState(State.WAITING_FOR_TARGET);
         } else if (object instanceof TimeOutTick) {
-            log.info("kill pill {}", getSelf().path());
+            log.debug("kill pill {}", getSelf().path());
             getContext().stop(getSelf());
         } else {
             unhandled(object);
@@ -110,7 +112,7 @@ public class NotificationFSM extends NotificationFSMBase {
         if (tick != null) {
             tick.cancel();
         }
-        tick = getContext().system().scheduler().scheduleOnce(Duration.create(5, TimeUnit.MINUTES), getSelf(),
+        tick = getContext().system().scheduler().scheduleOnce(Duration.create(1, TimeUnit.MINUTES), getSelf(),
                 new TimeOutTick(), getContext().dispatcher(), getSelf());
     }
 

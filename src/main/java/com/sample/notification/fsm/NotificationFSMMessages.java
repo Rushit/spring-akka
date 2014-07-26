@@ -1,6 +1,5 @@
-package com.sample.notification.actor;
+package com.sample.notification.fsm;
 
-import akka.actor.ActorRef;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;

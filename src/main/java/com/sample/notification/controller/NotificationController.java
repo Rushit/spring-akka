@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.async.DeferredResult;
 import static com.sample.config.ActorConfig.*;
-import static com.sample.notification.actor.NotificationManager.*;
+import static com.sample.notification.fsm.NotificationManager.*;
 
 @Controller
 public class NotificationController {
@@ -22,6 +22,8 @@ public class NotificationController {
 
     @Autowired
     ActorSystem actorSystem;
+
+
 
     @RequestMapping(value = "/blocking-ping", method = RequestMethod.GET)
     @ResponseBody
@@ -45,7 +47,7 @@ public class NotificationController {
     @ResponseBody
     public DeferredResult<String> getResult() {
         final long tic = System.currentTimeMillis();
-        logger.info("Id:{}  started @{} ", tic, tic );
+        logger.debug("Id:{}  started @{} ", tic, tic );
         final DeferredResult<String> deferredResult = new DeferredResult<String>(LONG_POLLING_TIMEOUT);
         deferredResult.onTimeout(new Runnable() {
             @Override
@@ -57,7 +59,7 @@ public class NotificationController {
             @Override
             public void run() {
                 long tic2 = System.currentTimeMillis();
-                logger.info("id:{} finished @{} with diff {}sec", tic, tic2, (tic2-tic)/1000);
+                logger.debug("id:{} finished @{} with diff {}sec", tic, tic2, (tic2-tic)/1000);
 
             }
         });
